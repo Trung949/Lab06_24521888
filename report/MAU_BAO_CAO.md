@@ -1,6 +1,6 @@
 # NT547 - LAB 06 - BÁO CÁO
 
-**MSSV:** 24521888  | **Họ tên:** Nguyễn Xuân Trung | **Lớp:** NT547.Q1x
+**MSSV:** 24521888  | **Họ tên:** Nguyễn Xuân Trung | **Lớp:** NT547.R11.ANTT
 **Session code tự sinh:** SC-3319B7 | **Tên contract:** SavingsClub_1888
 **Solidity / Slither:** 0.8.24 (`0.8.24+commit.e11b9ed9`) / 0.11.6 | **Ngày hoàn thành:** 20/11/2026
 **URL GitHub repository:** https://github.com/Trung949/Lab06_24521888
@@ -8,7 +8,9 @@
 Môi trường: WSL2 Ubuntu (Python 3.12.3, venv), `solc-select use 0.8.24`, `tools/preflight.py` báo OK cho python, git, slither, solc.
 Baseline SHA-256 (từ `lab_identity.json`): `66c98c62e45bb32d240d276572bd2fd11e7bf6464eb996eec8c49a4dc753cd1a`.
 
-![preflight](img/00_preflight.png)
+Trước khi quét, mình chạy `tools/preflight.py` cùng `solc --version` và `slither --version` để xác nhận môi trường đúng phiên bản đề yêu cầu. Kết quả ở Hình 1: python, git, slither và solc đều được tìm thấy, solc là 0.8.24 và Slither là 0.11.6.
+
+![Hình 1. Kiểm tra môi trường bằng tools/preflight.py: solc 0.8.24, Slither 0.11.6](img/00_preflight.png)
 
 ---
 
@@ -32,8 +34,13 @@ Baseline SHA-256 (từ `lab_identity.json`): `66c98c62e45bb32d240d276572bd2fd11e
 | F06 | timestamp | Low | Medium | AuditTarget.sol:`vestStep()` 77–82, dòng 78 | Owner gọi `vestStep` -> so sánh với `block.timestamp` -> validator chỉ lệch được vài giây, không đáng kể với chu kỳ 1 ngày |
 | F07 | missing-zero-check | Low | Medium | AuditTarget.sol:`forward()` 51, dòng 52 | `target = address(0)` -> `delegatecall` tới địa chỉ rỗng (bị xử lý luôn khi xóa `forward`) |
 
-![scan before raw](img/01_scan_before_raw.png)
-![scan before configured](img/02_scan_before_configured.png)
+Các số liệu trong bảng trên được lấy trực tiếp từ file evidence. Hình 2 là nội dung `summary.json` và `findings.csv` của lần quét raw: đủ 14 finding, trong đó 2 High và 3 Medium nằm ở đầu danh sách.
+
+![Hình 2. Kết quả quét baseline chế độ raw (evidence/before_raw): 14 finding](img/01_scan_before_raw.png)
+
+Với cùng mã nguồn, chế độ configured (Hình 3) chỉ còn 6 finding. Phần bị lọc là Low và Informational, còn 2 High và 3 Medium vẫn giữ nguyên, khớp với nhận xét so sánh ở trên.
+
+![Hình 3. Kết quả quét baseline chế độ configured (evidence/before_configured): 6 finding, High/Medium không đổi](img/02_scan_before_configured.png)
 
 ---
 
@@ -68,8 +75,13 @@ Baseline SHA-256 (từ `lab_identity.json`): `66c98c62e45bb32d240d276572bd2fd11e
   - `naming-convention` (Info): tên contract `SavingsClub_1888` do generator đặt theo MSSV, giữ nguyên để khớp `lab_identity.json`.
 - **`slither-disable-next-line`:** **không dùng.** Tất cả High/Medium được xử lý bằng sửa code. Workflow không bị chỉnh, không bật `exclude_medium`/`exclude_high`.
 
-![git diff](img/03_git_diff.png)
-![scan after](img/04_scan_after.png)
+Hình 4 là phần thay đổi giữa commit baseline và commit sửa lỗi. Các dòng đỏ là code cũ bị bỏ: hàm `forward()`, check `tx.origin`, lệnh `call` không kiểm tra kết quả, và phép chia trước nhân. Các dòng xanh là code mới: `onlyOwner`, `require(ok, ...)`, cập nhật số dư trước khi gọi ra ngoài, và `amount * feeBps / 10000`.
+
+![Hình 4. git diff 44e93f1..6a41891 trên AuditTarget.sol (chỉ hiện các dòng thay đổi)](img/03_git_diff.png)
+
+Sau khi sửa, mình quét lại cả hai chế độ (Hình 5). Bản raw không còn High hay Medium, chỉ còn 1 Low (`timestamp`, đã accept) và 5 Informational. Bản configured về 0 finding, nghĩa là CI sẽ không còn gì để chặn.
+
+![Hình 5. Kết quả quét lại sau khi sửa: after_raw còn 6 finding Low/Info, after_configured 0 finding](img/04_scan_after.png)
 
 ---
 
@@ -79,10 +91,15 @@ Baseline SHA-256 (từ `lab_identity.json`): `66c98c62e45bb32d240d276572bd2fd11e
   `slither contracts/ArchitectureDemo.sol --print human-summary` và `slither contracts/ArchitectureDemo.sol --print inheritance-graph`.
   Với Slither 0.11.6, file DOT được sinh ra có tên `ArchitectureDemo.sol.inheritance-graph.dot` (script tìm `ArchitectureDemo.sol.dot`), nên mình copy thành `evidence/architecture/ArchitectureDemo.sol.dot` rồi render:
   `dot -Tpng evidence/architecture/ArchitectureDemo.sol.dot -o evidence/architecture/inheritance.png`
-- Kết quả human-summary: 3 contract, 23 SLOC, `StudentAsset` có 4 hàm, 0 High/Medium/Low, 1 optimization.
-- Ảnh `evidence/architecture/inheritance.png`:
+- Kết quả human-summary (`evidence/architecture/human_summary.txt`): 3 contract, 23 SLOC, `StudentAsset` có 4 hàm, 0 High/Medium/Low, 1 optimization.
 
-![inheritance](../evidence/architecture/inheritance.png)
+Hình 6 là đồ thị kế thừa do printer `inheritance-graph` sinh ra, render bằng Graphviz. Mũi tên đi từ contract con sang contract cha, số trên mũi tên là thứ tự kế thừa.
+
+![Hình 6. Đồ thị kế thừa gốc của ArchitectureDemo.sol (evidence/architecture/inheritance.png)](../evidence/architecture/inheritance.png)
+
+Theo yêu cầu đánh dấu node, mình tô màu và gắn nhãn vai trò cho từng contract trên cùng đồ thị (Hình 7, file `inheritance_annotated.dot` và `.png`). Đỏ là contract quản lý quyền, xanh lá là contract quản lý mapping số dư, xanh dương là contract được gọi từ bên ngoài. Node và cạnh giữ nguyên như output của Slither, chỉ thêm màu và nhãn.
+
+![Hình 7. Đồ thị kế thừa đã đánh dấu: Quyền (AccessManaged), Số dư (BalanceLedger), Entrypoint (StudentAsset)](../evidence/architecture/inheritance_annotated.png)
 
 - **Access control** nằm ở `AccessManaged` (biến `admin`, modifier `onlyAdmin()`). **Logic số dư** nằm ở `BalanceLedger` (mapping private `balances`, `_credit()` private, `balanceOf()` public). **Contract triển khai / entrypoint** là `StudentAsset` (kế thừa `AccessManaged` [1] và `BalanceLedger` [2], hàm public `mint(address,uint256)`).
 - **Điểm audit cần bắt đầu:** Audit nên bắt đầu từ `StudentAsset.mint()` vì đây là entrypoint duy nhất có thể gọi từ bên ngoài và làm thay đổi số dư. Từ `mint`, cần lần ngược lên hai contract cha: `onlyAdmin` trong `AccessManaged` quyết định ai được mint, còn `_credit` trong `BalanceLedger` quyết định số dư được cộng thế nào. Lỗi security-critical thường nằm ở contract cha (modifier sai, biến `admin` không được khởi tạo hay không có hàm đổi admin an toàn) nhưng chỉ lộ ra qua entrypoint ở contract con. Thứ tự kế thừa (C3 linearization) cũng cần được kiểm tra để chắc chắn không có hàm hay modifier nào bị override ngoài ý muốn.
@@ -101,9 +118,17 @@ Baseline SHA-256 (từ `lab_identity.json`): `66c98c62e45bb32d240d276572bd2fd11e
 
 Log Slither gốc của từng run (tải bằng `gh run view <id> --log`) được lưu ở `evidence/ci_logs/`.
 
-![ci red baseline](img/05a.png)
-![ci red baseline log](img/05b.png)
-![ci green fixed](img/06.png)
+Hình 8 là trang tổng quan của run baseline: trạng thái Failure, commit 44e93f1, job `audit` thất bại.
+
+![Hình 8. Run baseline 44664351227: Failure tại commit 44e93f1](img/05a.png)
+
+Để chắc chắn RED là do finding chứ không phải lỗi môi trường, mình mở log của step Slither (Hình 9). Log liệt kê đúng các detector `controlled-delegatecall`, `reentrancy-eth`, `divide-before-multiply`, `tx-origin`, `unchecked-lowlevel` và kết thúc bằng `6 result(s) found`.
+
+![Hình 9. Log step Slither của run baseline: các detector High/Medium và 6 result(s) found](img/05b.png)
+
+Sau khi push bản sửa, run tiếp theo chuyển sang Success tại commit 6a41891 (Hình 10).
+
+![Hình 10. Run sau khi sửa 44665000534: Success tại commit 6a41891](img/06.png)
 
 ---
 
@@ -132,9 +157,17 @@ Log Slither gốc của từng run (tải bằng `gh run view <id> --log`) đư�
 
 - **Thay đổi về nguồn định danh / authorization:** `msg.sender` là địa chỉ **gọi trực tiếp** hàm hiện tại, nên chỉ đúng khi chính owner (EOA hoặc contract owner) gọi vào. `tx.origin` là EOA **khởi tạo giao dịch**, giữ nguyên qua mọi lớp gọi trung gian. Khi chuyển check sang `tx.origin`, bất kỳ contract nào owner tương tác cũng có thể gọi lại vào hàm được bảo vệ "thay mặt" owner, tức authorization chuyển từ "ai đang gọi" sang "ai ký giao dịch". Ngoài ra, nếu owner là multisig hoặc smart wallet thì `tx.origin` không bao giờ bằng `owner`, nên hàm bị khóa vĩnh viễn.
 
-![ci mutation red](img/07a.png)
-![ci mutation red log](img/07b.png)
-![ci revert green](img/08.png)
+Hình 11 là run của commit mutation 0c112a7: CI chuyển sang Failure ngay sau khi chỉ đổi một dòng.
+
+![Hình 11. Run mutation 44666602876: Failure tại commit 0c112a7](img/07a.png)
+
+Log của step Slither (Hình 12) cho thấy nguyên nhân là đúng một finding `tx-origin` tại `transferControl` (AuditTarget.sol#54), tổng `1 result(s) found`.
+
+![Hình 12. Log step Slither của run mutation: Detector tx-origin, 1 result(s) found](img/07b.png)
+
+Sau khi `git revert`, run cuối cùng quay lại Success tại commit be06d84 (Hình 13). Như vậy branch `main` kết thúc ở trạng thái an toàn.
+
+![Hình 13. Run revert 44666736367: Success tại commit be06d84](img/08.png)
 
 **Chuỗi CI đầy đủ (R-G-R-G):** 44e93f1 RED -> 6a41891 GREEN -> 0c112a7 RED (tx-origin) -> be06d84 GREEN. Branch `main` cuối cùng ở trạng thái GREEN.
 
