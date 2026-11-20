@@ -12,10 +12,11 @@ contract SavingsClub_1888 {
     mapping(address => uint256) public balances;
     bool private locked;
     mapping(address => uint256) public escrowed;
-    uint256 public feeBps = 250;
+    uint256 public constant feeBps = 250;
     uint256 public nextRelease;
 
     event Deposited(address indexed who, uint256 amount);
+    event OwnerChanged(address indexed oldOwner, address indexed newOwner);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "not owner");
@@ -45,17 +46,13 @@ contract SavingsClub_1888 {
 
     function flush(address payable to) external onlyOwner {
         require(to != address(0), "zero");
-        to.call{value: address(this).balance}("");
+        (bool ok, ) = to.call{value: address(this).balance}("");
+        require(ok, "flush failed");
     }
 
-    function forward(address target, bytes calldata data) external {
-        (bool ok, ) = target.delegatecall(data);
-        require(ok, "delegatecall failed");
-    }
-
-    function transferControl(address newOwner) external {
-        require(tx.origin == owner, "not owner");
+    function transferControl(address newOwner) external onlyOwner {
         require(newOwner != address(0), "zero");
+        emit OwnerChanged(owner, newOwner);
         owner = newOwner;
     }
 
@@ -65,13 +62,13 @@ contract SavingsClub_1888 {
 
     function claimSafe() external guarded {
         uint256 a = escrowed[msg.sender];
+        escrowed[msg.sender] = 0;
         (bool ok, ) = msg.sender.call{value: a}("");
         require(ok, "send failed");
-        escrowed[msg.sender] = 0;
     }
 
-    function previewFee(uint256 amount) public view returns (uint256) {
-        return amount / 10000 * feeBps;
+    function previewFee(uint256 amount) public pure returns (uint256) {
+        return amount * feeBps / 10000;
     }
 
     function vestStep() external onlyOwner {
