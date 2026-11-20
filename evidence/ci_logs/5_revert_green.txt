@@ -1,0 +1,6 @@
+RUN: https://github.com/Trung949/Lab06_24521888/actions/runs/44666736367
+SHA: be06d84cda1775dde6ce97936bd66c3077d2786b
+TITLE: Revert "lab06: one-line mutation tx-origin (in function)"
+CONCLUSION: success
+----- Slither step log -----
+INFO:Slither:AuditTarget.sol analyzed (2 contracts with 64 detectors), 0 result(s) found

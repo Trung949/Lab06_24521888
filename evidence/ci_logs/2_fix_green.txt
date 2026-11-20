@@ -1,0 +1,6 @@
+RUN: https://github.com/Trung949/Lab06_24521888/actions/runs/44665000534
+SHA: 6a41891bcb91928b8eaac176caaa8e97db481522
+TITLE: lab06: fix and triage findings
+CONCLUSION: success
+----- Slither step log -----
+INFO:Slither:AuditTarget.sol analyzed (2 contracts with 64 detectors), 0 result(s) found

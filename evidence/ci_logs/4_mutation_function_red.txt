@@ -1,0 +1,10 @@
+RUN: https://github.com/Trung949/Lab06_24521888/actions/runs/44666602876
+SHA: 0c112a74fd51a9321529b8d2411e8c92ba6d9723
+TITLE: lab06: one-line mutation tx-origin (in function)
+CONCLUSION: failure
+----- Slither step log -----
+INFO:Detectors:
+Detector: tx-origin
+SavingsClub_1888.transferControl(address) (AuditTarget.sol#53-57) uses tx.origin for authorization: require(bool,string)(tx.origin == owner,not owner) (AuditTarget.sol#54)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-usage-of-txorigin
+INFO:Slither:AuditTarget.sol analyzed (2 contracts with 64 detectors), 1 result(s) found
