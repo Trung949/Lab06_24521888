@@ -19,7 +19,7 @@ contract SavingsClub_1888 {
     event OwnerChanged(address indexed oldOwner, address indexed newOwner);
 
     modifier onlyOwner() {
-        require(tx.origin == owner, "not owner");
+        require(msg.sender == owner, "not owner");
         _;
     }
 
