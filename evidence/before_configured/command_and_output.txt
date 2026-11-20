@@ -1,0 +1,54 @@
+COMMAND: slither AuditTarget.sol --config-file slither.config.json --fail-none --json evidence/before_configured/slither.json
+SLITHER_VERSION:
+0.11.6
+
+SOLC_VERSION:
+solc, the solidity compiler commandline interface
+Version: 0.8.24+commit.e11b9ed9.Linux.g++
+
+
+Detector: controlled-delegatecall
+SavingsClub_1888.forward(address,bytes) (AuditTarget.sol#51-54) uses delegatecall to a input-controlled function id
+	- (ok,None) = target.delegatecall(data) (AuditTarget.sol#52)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#controlled-delegatecall
+
+Detector: reentrancy-eth
+Reentrancy in SavingsClub_1888.claimSafe() (AuditTarget.sol#66-71):
+	External calls:
+	- (ok,None) = msg.sender.call{value: a}() (AuditTarget.sol#68)
+	State variables written after the call(s):
+	- escrowed[msg.sender] = 0 (AuditTarget.sol#70)
+	SavingsClub_1888.escrowed (AuditTarget.sol#14) can be used in cross function reentrancies:
+	- SavingsClub_1888.claimSafe() (AuditTarget.sol#66-71)
+	- SavingsClub_1888.depositSafe() (AuditTarget.sol#62-64)
+	- SavingsClub_1888.escrowed (AuditTarget.sol#14)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-1
+
+Detector: divide-before-multiply
+SavingsClub_1888.previewFee(uint256) (AuditTarget.sol#73-75) performs a multiplication on the result of a division:
+	- amount / 10000 * feeBps (AuditTarget.sol#74)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#divide-before-multiply
+
+Detector: tx-origin
+SavingsClub_1888.transferControl(address) (AuditTarget.sol#56-60) uses tx.origin for authorization: require(bool,string)(tx.origin == owner,not owner) (AuditTarget.sol#57)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-usage-of-txorigin
+
+Detector: unchecked-lowlevel
+SavingsClub_1888.flush(address) (AuditTarget.sol#46-49) ignores return value by to.call{value: address(this).balance}() (AuditTarget.sol#48)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#unchecked-low-level-calls
+
+Detector: constable-states
+SavingsClub_1888.feeBps (AuditTarget.sol#15) should be constant 
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#state-variables-that-could-be-declared-constant
+AuditTarget.sol analyzed (2 contracts with 64 detectors), 6 result(s) found
+Multiple frameworks detected: solc, Solc-json. Using solc (highest priority). Use --compile-force-framework to override.
+'solc --version' running
+'solc AuditTarget.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/mnt/d/năm 3/Blockchain/lab6/Lab06_24521888' running
+Compilation warnings/errors on AuditTarget.sol:
+Warning: Return value of low-level calls not used.
+  --> AuditTarget.sol:48:9:
+   |
+48 |         to.call{value: address(this).balance}("");
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+

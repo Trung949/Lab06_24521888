@@ -1,0 +1,9 @@
+{
+  "mssv": "24521888",
+  "session_code": "SC-3319B7",
+  "contract": "SavingsClub_1888",
+  "baseline_sha256": "66c98c62e45bb32d240d276572bd2fd11e7bf6464eb996eec8c49a4dc753cd1a",
+  "generated_utc": "2026-11-20T02:47:59.461921+00:00",
+  "solidity": "0.8.24",
+  "note": "session_code sinh tai may SV, KHONG do GV cap"
+}
