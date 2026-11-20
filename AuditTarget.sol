@@ -51,7 +51,7 @@ contract SavingsClub_1888 {
     }
 
     function transferControl(address newOwner) external onlyOwner {
-        require(newOwner != address(0), "zero");
+        require(tx.origin == owner, "not owner");
         emit OwnerChanged(owner, newOwner);
         owner = newOwner;
     }
